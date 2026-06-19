@@ -1,6 +1,6 @@
 # BMI Prediction
 
-Predicts a person's BMI category from height and weight using multiple linear regression computed from scratch (no scikit-learn).
+Predicts a person's BMI category from height and weight using multiple linear regression computed from scratch.
 
 ## Project Structure
 
