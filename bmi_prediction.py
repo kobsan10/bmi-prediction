@@ -1,63 +1,103 @@
+import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, classification_report
+ 
+df = pd.read_csv('bmi.csv')
+print(df.head())
+ 
+X1 = df["Height"].to_numpy()
+X2 = df["Weight"].to_numpy()
+y = df["Index"].to_numpy()
+n = len(df)
 
-BMI_LABELS = {
-    0: "Extremely Weak",
-    1: "Weak",
-    2: "Normal",
-    3: "Overweight",
-    4: "Obesity",
-    5: "Extreme Obesity",
-}
+# variance and covariance terms
+sumofX1squares = np.sum(X1**2) - ((np.sum(X1) ** 2) / n)
 
-# --- Load & prepare data ---
-df = pd.read_csv("bmi.csv")
-df = df.drop("Gender", axis=1)
+sumofX2squares = np.sum(X2**2) - ((np.sum(X2) ** 2) / n)
 
-X = df[["Height", "Weight"]]
-y = df["Index"]
+sumofX1y = np.sum(X1 * y) - ((np.sum(X1) * np.sum(y)) / n)
 
-# --- Feature scaling ---
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+sumofX2y = np.sum(X2 * y) - ((np.sum(X2) * np.sum(y)) / n) 
 
-# --- Train / test split ---
-X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y, test_size=0.2, random_state=42
-)
+sumofX1X2 = np.sum(X1 * X2) - ((np.sum(X1) * np.sum(X2)) / n)
 
-# --- Train model ---
-model = LogisticRegression(max_iter=1000)
-model.fit(X_train, y_train)
+meanofy = np.mean(y)
 
-# --- Evaluate ---
-y_pred = model.predict(X_test)
-print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}\n")
-print(classification_report(y_test, y_pred, target_names=list(BMI_LABELS.values()), zero_division=0))
+meanofX1 = np.mean(X1)
 
-# --- Interactive prediction loop ---
-print("\n--- BMI Prediction ---")
-print("Enter Height (cm) and Weight (kg) to predict BMI category.")
-print("Type 'quit' to exit.\n")
+meanofX2 = np.mean(X2)
+ 
+# shared denominator for both slope coefficients
+denominator = (sumofX1squares * sumofX2squares) - (sumofX1X2**2)
 
-while True:
-    height_input = input("Height (cm): ").strip()
-    if height_input.lower() == "quit":
-        break
-    weight_input = input("Weight (kg): ").strip()
-    if weight_input.lower() == "quit":
-        break
+# slope coefficients
+b1 = ((sumofX2squares * sumofX1y) - (sumofX1X2 * sumofX2y)) / denominator
 
-    try:
-        height = float(height_input)
-        weight = float(weight_input)
-    except ValueError:
-        print("Please enter valid numbers.\n")
-        continue
+b2 = ((sumofX1squares * sumofX2y) - (sumofX1X2 * sumofX1y)) / denominator
 
-    sample = scaler.transform(pd.DataFrame([[height, weight]], columns=["Height", "Weight"]))
-    index = model.predict(sample)[0]
-    print(f"\nPredicted BMI Index: {index} - {BMI_LABELS[index]}\n")
+b0 = meanofy - (b1 * meanofX1) - (b2 * meanofX2)
+ 
+print("--- Trained Coefficients (via Manual Equations) ---")
+
+print(f"b0 (Intercept)   : {b0:.4f}")
+
+print(f"b1 (Height Coeff) : {b1:.4f}")
+
+print(f"b2 (Weight Coeff) : {b2:.4f}\n")
+ 
+
+def predict_bmi(height_cm, weight_kg):
+
+    y_pred = b0 + (b1 * height_cm) + (b2 * weight_kg)
+ 
+    # clamp to valid index [0-5]
+    predicted_index = int(np.clip(round(y_pred), 0, 5))
+ 
+    if predicted_index == 0:
+
+        text_result = "Extremely Weak"
+
+    elif predicted_index == 1:
+
+        text_result = "Weak"
+
+    elif predicted_index == 2:
+
+        text_result = "Normal"
+
+    elif predicted_index == 3:
+
+        text_result = "Overweight"
+
+    elif predicted_index == 4:
+
+        text_result = "Obesity"
+
+    elif predicted_index == 5:
+
+        text_result = "Extreme Obesity"
+
+    else:
+
+        text_result = "Unknown Category"
+ 
+    print("-" * 50)
+
+    print(f"Height: {height_cm} cm")
+
+    print(f"Weight: {weight_kg} kg")
+
+    print(f"Predicted BMI Index: {predicted_index}")
+
+    print(f"Category: {text_result}")
+
+    print("-" * 50)
+ 
+ 
+print("--- Prediction Simulation ---")
+ 
+user_height = float(input("Enter Height (in cm): "))
+
+user_weight = float(input("Enter Weight (in kg): "))
+
+predict_bmi(user_height,user_weight)
+ 

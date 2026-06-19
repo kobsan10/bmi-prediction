@@ -1,12 +1,12 @@
 # BMI Prediction
 
-Predicts a person's BMI category from height and weight using multi-class logistic regression.
+Predicts a person's BMI category from height and weight using multiple linear regression computed from scratch (no scikit-learn).
 
 ## Project Structure
 
 ```
 bmi-prediction/
-├── bmi_prediction.py   # Main script: training, evaluation, and interactive prediction
+├── bmi_prediction.py   # Main script: trains coefficients and runs a single prediction
 └── bmi.csv             # Dataset: 500 samples with Gender, Height, Weight, Index
 ```
 
@@ -24,13 +24,13 @@ bmi-prediction/
 ## Requirements
 
 - Python 3
+- numpy
 - pandas
-- scikit-learn
 
 ## Installation
 
 ```bash
-pip install pandas scikit-learn
+pip install numpy pandas
 ```
 
 ## Dataset
@@ -45,28 +45,35 @@ python bmi_prediction.py
 ```
 
 The script will:
-1. Train the model and print accuracy and a full classification report.
-2. Start an interactive loop — enter height (cm) and weight (kg) to get a prediction. Type `quit` to exit.
+1. Compute regression coefficients from the dataset and print them.
+2. Prompt for height (cm) and weight (kg), then print the predicted BMI category.
 
 **Example session:**
 ```
-Accuracy: 0.97
+   Gender  Height  Weight  Index
+0  Male    174     96      4
+...
 
---- BMI Prediction ---
-Enter Height (cm) and Weight (kg) to predict BMI category.
-Type 'quit' to exit.
+--- Trained Coefficients (via Manual Equations) ---
+b0 (Intercept)   : -2.1837
+b1 (Height Coeff) : -0.0039
+b2 (Weight Coeff) : 0.0597
 
-Height (cm): 175
-Weight (kg): 80
-
-Predicted BMI Index: 3 - Overweight
+--- Prediction Simulation ---
+Enter Height (in cm): 174
+Enter Weight (in kg): 96
+--------------------------------------------------
+Height: 170.0 cm
+Weight: 72.0 kg
+Predicted BMI Index: 3
+Category: Overweight
+--------------------------------------------------
 ```
 
 ## How It Works
 
-1. Load `bmi.csv` and drop the Gender column (unused feature).
-2. Scale Height and Weight with `StandardScaler`.
-3. Split data 80/20 into train and test sets (`random_state=42`).
-4. Train a `LogisticRegression` model (`max_iter=1000`).
-5. Evaluate on the test set — prints accuracy and a per-class classification report.
-6. Enter an interactive loop for real-time predictions on new inputs.
+1. Load `bmi.csv` and extract Height (X1), Weight (X2), and Index (y).
+2. Compute variance and covariance terms (corrected sums of squares/cross-products).
+3. Solve for slope coefficients b1 (Height) and b2 (Weight) using the closed-form two-feature normal equations.
+4. Derive intercept b0 from the feature and target means.
+5. Prompt the user for height and weight, run `predict_bmi()`, and print the BMI index and category.
